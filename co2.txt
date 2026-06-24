@@ -1,0 +1,251 @@
+import java.util.*;
+
+// Flight class
+class Flight {
+    String id;
+    String route;
+    int price;
+
+    Flight(String id, String route, int price) {
+        this.id = id;
+        this.route = route;
+        this.price = price;
+    }
+}
+
+// ------------------ TRIE ------------------
+class TrieNode {
+    Map<Character, TrieNode> children = new HashMap<>();
+    List<Flight> flights = new ArrayList<>();
+    boolean isEnd = false;
+}
+
+class Trie {
+    private TrieNode root = new TrieNode();
+
+    public void insert(String route, Flight flight) {
+        TrieNode current = root;
+
+        for (char ch : route.toLowerCase().toCharArray()) {
+            current.children.putIfAbsent(ch, new TrieNode());
+            current = current.children.get(ch);
+        }
+
+        current.isEnd = true;
+        current.flights.add(flight);
+    }
+
+    public void searchPrefix(String prefix) {
+        TrieNode current = root;
+
+        for (char ch : prefix.toLowerCase().toCharArray()) {
+            if (!current.children.containsKey(ch)) {
+                System.out.println("No flights found.");
+                return;
+            }
+            current = current.children.get(ch);
+        }
+
+        displayAll(current);
+    }
+
+    private void displayAll(TrieNode node) {
+        if (node.isEnd) {
+            for (Flight f : node.flights) {
+                System.out.println("Found: " + f.id + ": " +
+                        f.route + " (Price: " + f.price + ")");
+            }
+        }
+
+        for (TrieNode child : node.children.values()) {
+            displayAll(child);
+        }
+    }
+}
+
+// ------------------ AVL TREE ------------------
+class AVLNode {
+    Flight flight;
+    int height;
+    AVLNode left, right;
+
+    AVLNode(Flight flight) {
+        this.flight = flight;
+        height = 1;
+    }
+}
+
+class AVLTree {
+
+    private AVLNode root;
+
+    int height(AVLNode node) {
+        return node == null ? 0 : node.height;
+    }
+
+    int getBalance(AVLNode node) {
+        return node == null ? 0 :
+                height(node.left) - height(node.right);
+    }
+
+    AVLNode rightRotate(AVLNode y) {
+        AVLNode x = y.left;
+        AVLNode t2 = x.right;
+
+        x.right = y;
+        y.left = t2;
+
+        y.height = Math.max(height(y.left),
+                height(y.right)) + 1;
+        x.height = Math.max(height(x.left),
+                height(x.right)) + 1;
+
+        return x;
+    }
+
+    AVLNode leftRotate(AVLNode x) {
+        AVLNode y = x.right;
+        AVLNode t2 = y.left;
+
+        y.left = x;
+        x.right = t2;
+
+        x.height = Math.max(height(x.left),
+                height(x.right)) + 1;
+        y.height = Math.max(height(y.left),
+                height(y.right)) + 1;
+
+        return y;
+    }
+
+    AVLNode insert(AVLNode node, Flight flight) {
+
+        if (node == null)
+            return new AVLNode(flight);
+
+        if (flight.price < node.flight.price)
+            node.left = insert(node.left, flight);
+        else
+            node.right = insert(node.right, flight);
+
+        node.height = 1 + Math.max(
+                height(node.left),
+                height(node.right));
+
+        int balance = getBalance(node);
+
+        // LL
+        if (balance > 1 &&
+                flight.price < node.left.flight.price)
+            return rightRotate(node);
+
+        // RR
+        if (balance < -1 &&
+                flight.price > node.right.flight.price)
+            return leftRotate(node);
+
+        // LR
+        if (balance > 1 &&
+                flight.price > node.left.flight.price) {
+            node.left = leftRotate(node.left);
+            return rightRotate(node);
+        }
+
+        // RL
+        if (balance < -1 &&
+                flight.price < node.right.flight.price) {
+            node.right = rightRotate(node.right);
+            return leftRotate(node);
+        }
+
+        return node;
+    }
+
+    public void insert(Flight flight) {
+        root = insert(root, flight);
+    }
+
+    public void rangeSearch(int min, int max) {
+        rangeSearch(root, min, max);
+    }
+
+    private void rangeSearch(AVLNode node, int min, int max) {
+
+        if (node == null)
+            return;
+
+        if (min < node.flight.price)
+            rangeSearch(node.left, min, max);
+
+        if (node.flight.price >= min &&
+                node.flight.price <= max) {
+            System.out.println("In Budget: " +
+                    node.flight.id + ": " +
+                    node.flight.route +
+                    " (Price: " +
+                    node.flight.price + ")");
+        }
+
+        if (max > node.flight.price)
+            rangeSearch(node.right, min, max);
+    }
+}
+
+// ------------------ MAIN ------------------
+public class FlightSearchSystem {
+
+    public static void main(String[] args) {
+
+        Trie trie = new Trie();
+        AVLTree avl = new AVLTree();
+
+        Flight f1 = new Flight(
+                "TF-101",
+                "Delhi to Mumbai",
+                5500);
+
+        Flight f2 = new Flight(
+                "TF-102",
+                "Delhi to Bangalore",
+                7200);
+
+        Flight f3 = new Flight(
+                "TF-103",
+                "Mumbai to Hyderabad",
+                4200);
+
+        Flight f4 = new Flight(
+                "TF-104",
+                "Bangalore to Chennai",
+                3500);
+
+        Flight[] flights = {f1, f2, f3, f4};
+
+        for (Flight f : flights) {
+            trie.insert(f.route, f);
+            avl.insert(f);
+        }
+
+        System.out.println(
+                "--- 1. PREFIX SEARCH OUTPUT (Query: 'Del') ---");
+
+        trie.searchPrefix("Del");
+
+        System.out.println(
+                "\n--- 2. BUDGET RANGE SEARCH OUTPUT (3000 to 6000 INR) ---");
+
+        avl.rangeSearch(3000, 6000);
+
+        System.out.println(
+                "\n--- 3. DATA STRUCTURE COMPLEXITY ANALYSES ---");
+
+        System.out.println(
+                "Trie Suggestion Lookup Time : O(L) [L = Prefix String Length]");
+
+        System.out.println(
+                "AVL Tree Balancing Time     : O(log N)");
+
+        System.out.println(
+                "AVL Range Query Search Time : O(log N + K) [K = Matching Flights]");
+    }
+}

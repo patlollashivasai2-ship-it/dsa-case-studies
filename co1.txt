@@ -1,0 +1,79 @@
+import java.util.Stack;
+
+// Node class for Singly Linked List
+class BookingNode {
+    String transactionId;
+    String passengerName;
+    String seatNo;
+    BookingNode next;
+
+    BookingNode(String transactionId, String passengerName, String seatNo) {
+        this.transactionId = transactionId;
+        this.passengerName = passengerName;
+        this.seatNo = seatNo;
+        this.next = null;
+    }
+}
+
+public class TravelSystem {
+
+    private BookingNode head;
+
+    // Insert at beginning
+    public void addBooking(String id, String name, String seat) {
+        BookingNode newNode = new BookingNode(id, name, seat);
+        newNode.next = head;
+        head = newNode;
+    }
+
+    public void displayBookings() {
+        System.out.println("--- 1. PASSENGER BOOKING RECORDS (Singly Linked List) ---");
+
+        BookingNode temp = head;
+
+        while (temp != null) {
+            System.out.println("ID: " + temp.transactionId +
+                    " | Passenger: " + temp.passengerName +
+                    " | Seat: " + temp.seatNo);
+            temp = temp.next;
+        }
+    }
+
+    public static void main(String[] args) {
+
+        TravelSystem system = new TravelSystem();
+
+        // Booking Records
+        system.addBooking("TXN-901", "Amit Sharma", "12A");
+        system.addBooking("TXN-902", "Priya Patel", "14C");
+        system.addBooking("TXN-903", "Rohan Das", "08F");
+
+        system.displayBookings();
+
+        // Stack for Search History
+        Stack<String> searchHistory = new Stack<>();
+
+        searchHistory.push("Delhi to Mumbai (05-June-2026)");
+        searchHistory.push("Delhi to Bangalore (12-June-2026)");
+        searchHistory.push("Mumbai to Hyderabad (18-June-2026)");
+
+        System.out.println("\n--- 2. USER RECENT SEARCH FOOTPRINT (Stack History) ---");
+
+        for (int i = searchHistory.size() - 1; i >= 0; i--) {
+            System.out.println("-> " + searchHistory.get(i));
+        }
+
+        // Pop Operation
+        String removedSearch = searchHistory.pop();
+
+        System.out.println("\n--- 3. BACKWARD NAVIGATION EVENT (Pop Operation) ---");
+        System.out.println("Navigated back from: [" + removedSearch + "]");
+
+        // Updated Stack
+        System.out.println("\n--- 4. UPDATED SEARCH HISTORY STACK ---");
+
+        for (int i = searchHistory.size() - 1; i >= 0; i--) {
+            System.out.println("-> " + searchHistory.get(i));
+        }
+    }
+}

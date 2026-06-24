@@ -1,0 +1,247 @@
+import java.util.*;
+
+class Edge {
+    String destination;
+    int distance;
+
+    Edge(String destination, int distance) {
+        this.destination = destination;
+        this.distance = distance;
+    }
+}
+
+class MSTEdge {
+    String from, to;
+    int weight;
+
+    MSTEdge(String from, String to, int weight) {
+        this.from = from;
+        this.to = to;
+        this.weight = weight;
+    }
+}
+
+public class TravelFlow {
+
+    private Map<String, List<Edge>> graph = new HashMap<>();
+
+    // Add undirected route
+    void addRoute(String city1, String city2, int distance) {
+        graph.putIfAbsent(city1, new ArrayList<>());
+        graph.putIfAbsent(city2, new ArrayList<>());
+
+        graph.get(city1).add(new Edge(city2, distance));
+        graph.get(city2).add(new Edge(city1, distance));
+    }
+
+    // Display adjacency list
+    void displayGraph() {
+        System.out.println("--- Graph: Cities & Routes (Adjacency List) ---\n");
+
+        for (String city : graph.keySet()) {
+            System.out.print(city + " -> ");
+
+            List<Edge> routes = graph.get(city);
+
+            for (int i = 0; i < routes.size(); i++) {
+                Edge e = routes.get(i);
+
+                System.out.print(e.destination +
+                        "(" + e.distance + "km)");
+
+                if (i < routes.size() - 1)
+                    System.out.print(", ");
+            }
+
+            System.out.println();
+        }
+    }
+
+    // BFS
+    void bfs(String start) {
+        System.out.println("\n--- BFS: Travel Connectivity from " + start + " ---");
+
+        Queue<String> queue = new LinkedList<>();
+        Set<String> visited = new HashSet<>();
+
+        queue.add(start);
+        visited.add(start);
+
+        List<String> order = new ArrayList<>();
+
+        while (!queue.isEmpty()) {
+            String city = queue.poll();
+            order.add(city);
+
+            for (Edge edge : graph.get(city)) {
+                if (!visited.contains(edge.destination)) {
+                    visited.add(edge.destination);
+                    queue.add(edge.destination);
+                }
+            }
+        }
+
+        System.out.print("BFS Order: ");
+
+        for (int i = 0; i < order.size(); i++) {
+            System.out.print(order.get(i));
+
+            if (i < order.size() - 1)
+                System.out.print(" -> ");
+        }
+
+        System.out.println();
+        System.out.println("All " + visited.size()
+                + " cities reachable from " + start
+                + ". Network is fully connected.");
+    }
+
+    // DFS Cycle Detection
+    boolean dfsCycle(String current,
+                     String parent,
+                     Set<String> visited) {
+
+        visited.add(current);
+
+        for (Edge edge : graph.get(current)) {
+
+            String neighbor = edge.destination;
+
+            if (!visited.contains(neighbor)) {
+
+                if (dfsCycle(neighbor,
+                        current,
+                        visited))
+                    return true;
+
+            } else if (!neighbor.equals(parent)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void detectCycle() {
+
+        System.out.println(
+                "\n--- DFS: Cycle Detection in Transport Network ---");
+
+        Set<String> visited = new HashSet<>();
+
+        boolean hasCycle = dfsCycle(
+                graph.keySet().iterator().next(),
+                null,
+                visited);
+
+        System.out.println(
+                "Cycle detected: "
+                        + (hasCycle ? "YES" : "NO")
+                        + " - Loop routes exist in transport network.");
+    }
+
+    // Prim's MST
+    void primMST(String start) {
+
+        System.out.println(
+                "\n--- Prim's MST: Minimum Spanning Tree (Optimal Network) ---");
+
+        Set<String> visited = new HashSet<>();
+
+        PriorityQueue<MSTEdge> pq =
+                new PriorityQueue<>(
+                        Comparator.comparingInt(e -> e.weight));
+
+        visited.add(start);
+
+        for (Edge e : graph.get(start)) {
+            pq.add(new MSTEdge(start,
+                    e.destination,
+                    e.distance));
+        }
+
+        List<MSTEdge> mst = new ArrayList<>();
+        int totalCost = 0;
+
+        while (!pq.isEmpty()) {
+
+            MSTEdge edge = pq.poll();
+
+            if (visited.contains(edge.to))
+                continue;
+
+            visited.add(edge.to);
+            mst.add(edge);
+            totalCost += edge.weight;
+
+            for (Edge next : graph.get(edge.to)) {
+
+                if (!visited.contains(next.destination)) {
+
+                    pq.add(new MSTEdge(
+                            edge.to,
+                            next.destination,
+                            next.distance));
+                }
+            }
+        }
+
+        System.out.printf("%-20s %-10s%n",
+                "Edge",
+                "Distance");
+
+        System.out.println(
+                "------------------------------------------");
+
+        for (MSTEdge e : mst) {
+            System.out.printf(
+                    "%-10s -- %-10s %5d km%n",
+                    e.from,
+                    e.to,
+                    e.weight);
+        }
+
+        System.out.println(
+                "------------------------------------------");
+
+        System.out.println(
+                "Total MST Cost                 "
+                        + totalCost + " km");
+    }
+
+    public static void main(String[] args) {
+
+        TravelFlow tf = new TravelFlow();
+
+        tf.addRoute("Delhi", "Mumbai", 1400);
+        tf.addRoute("Delhi", "Hyderabad", 1500);
+        tf.addRoute("Mumbai", "Bangalore", 980);
+        tf.addRoute("Mumbai", "Hyderabad", 710);
+        tf.addRoute("Bangalore", "Hyderabad", 570);
+        tf.addRoute("Bangalore", "Chennai", 350);
+        tf.addRoute("Hyderabad", "Chennai", 630);
+
+        System.out.println(
+                "=== TravelFlow - Graph Algorithms for Transportation Networks ===\n");
+
+        tf.displayGraph();
+
+        tf.bfs("Delhi");
+
+        tf.detectCycle();
+
+        tf.primMST("Delhi");
+
+        System.out.println(
+                "\n--- Time Complexity Summary ---");
+
+        System.out.println(
+                "BFS                         : O(V + E)");
+
+        System.out.println(
+                "DFS                         : O(V + E)");
+
+        System.out.println(
+                "MST - Prim's (with PQ)      : O((V + E) log V)");
+    }
+}
